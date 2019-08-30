@@ -7,6 +7,8 @@ typedef struct col_t {
   unsigned char b;
 } col_t;
 
-void color_print(col_t col);
+void col_print(col_t col);
+
+col_t col_rand();
 
 #endif

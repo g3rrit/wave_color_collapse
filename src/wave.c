@@ -34,12 +34,12 @@ void wave_color(img_t *img) {
     uint y = pos_arr[p].y;
     pos_arr[p].v = 0;
 
-    printf("pos: (%d, %d)\n", x, y);
+    printf("\rprog: %d/%d", w * h, pcount);
     col_t col = wave_color_pos(img, x, y);
-    color_print(col);
     img_set(img, x, y, col);
 
   }
+  printf("\n");
 
 }
 
@@ -49,44 +49,29 @@ double wave_color_prob(img_t *img, uint x, uint y, col_t col) {
   }
   //printf("x: %d, y: %d\n", x, y);
 
-  col_t ca[8] = { 0 };
-  ca[0] = img_at(img, x - 1, y);
-  ca[1] = img_at(img, x - 1, y - 1);
-  ca[2] = img_at(img, x, y - 1);
-  ca[3] = img_at(img, x + 1, y - 1);
-  ca[4] = img_at(img, x + 1, y);
-  ca[5] = img_at(img, x + 1, y + 1);
-  ca[6] = img_at(img, x, y + 1);
-  ca[7] = img_at(img, x - 1, y + 1);
-
-  uint r = 0;
-  uint g = 0;
-  uint b = 0;
-  uint c = 0;
-  for(uint i = 0; i < 8; i++) {
-    if(ca[i].r == 0 && ca[i].g == 0 && ca[i].b == 0) {
-      continue;
+  uint ix = 3;
+  uint iy = 3;
+  col_t ca[4 * ix * iy];
+  for(uint dix = 0; dix < 2 * ix; dix++) {
+    for(uint diy = 0; diy < 2 * iy; diy++) {
+      ca[diy * 2 * ix + dix] = img_at(img, x + dix - ix, y + diy - iy);
     }
-    c++;
-    r = ca[i].r;
-    g = ca[i].g;
-    b = ca[i].b;
   }
-  if(c == 0) return 1.0;
+  uint nc = 0;
+  uint d = 0;
+  do {
+    d = rri(0, 7);
+    nc++;
+  } while(ca[d].r == 0 && ca[d].g == 0 && ca[d].b == 0 && nc <= 7);
+  if(nc == ix * iy * 4) return 1.0;
 
-  col_t avg = {
-    .r = r / c,
-    .g = g / c,
-    .b = b / c
-  };
-
-  uint dist = abs(col.r - r) + abs(col.g - g) + abs(col.b - b);
+  uint dist = abs(col.r - ca[d].r) + abs(col.g - ca[d].g) + abs(col.b - ca[d].b);
   if(dist == 0) {
-    return 0;
+    return 400;
   }
+  //printf("dist: %d\n", dist);
 
-  return (4.0 / dist);
-
+  return (100.0 / dist);
 }
 
 #define r_range 25
@@ -97,6 +82,8 @@ double wave_color_prob(img_t *img, uint x, uint y, col_t col) {
 col_t wave_color_pos(img_t *img, uint x, uint y) {
   uint w = img->width;
   uint h = img->height;
+
+  /*
   static double col_dens[col_range] = { 0 };
 
   for(unsigned char r = 0; r < r_range; r++) {
@@ -104,9 +91,9 @@ col_t wave_color_pos(img_t *img, uint x, uint y) {
       for(unsigned char b = 0; b < b_range; b++) {
         uint i = (r * b_range * g_range) + (g * r_range) + b;
         col_t col =  {
-          .r = (r / r_range) * 255,
-          .g = (g / g_range) * 255,
-          .b = (b / b_range) * 255
+          .r = ((float) r / r_range) * 255,
+          .g = ((float) g / g_range) * 255,
+          .b = ((float) b / b_range) * 255
         };
 
         col_dens[i] = wave_color_prob(img, x, y, col);
@@ -132,8 +119,34 @@ col_t wave_color_pos(img_t *img, uint x, uint y) {
   }
 
   return (col_t) {
-    .r = (((cp / (g_range * b_range)) % r_range) / r_range) * 255,
-    .g = (((cp / b_range) % g_range) / g_range) * 255,
-    .b = ((cp % b_range) / b_range) * 255
+    .r = ((double) ((int) ((double) cp / (g_range * b_range)) % r_range) / r_range) * 255,
+    .g = ((double) ((int) ((double) cp / b_range) % g_range) / g_range) * 255,
+    .b = ((double) (cp % b_range) / b_range) * 255
   };
+  */
+
+
+  uint ix = 10;
+  uint iy = 10;
+
+  if(x <= ix || y <= iy || x >= img->width - ix|| y >= img->height - iy) {
+    return col_rand();
+  }
+
+  col_t ca[4 * ix * iy];
+  for(uint dix = 0; dix < 2 * ix; dix++) {
+    for(uint diy = 0; diy < 2 * iy; diy++) {
+      ca[diy * 2 * ix + dix] = img_at(img, x + dix - ix, y + diy - iy);
+    }
+  }
+
+  uint nc = 0;
+  uint d = 0;
+  do {
+    d = rri(0, 4 * ix * iy);
+    nc++;
+  } while(ca[d].r == 0 && ca[d].g == 0 && ca[d].b == 0 && nc <= 4 * ix * iy);
+  if(nc >= 4 * ix * iy) return col_rand();
+
+  return ca[d];
 }

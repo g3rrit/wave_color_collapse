@@ -5,7 +5,7 @@
 int main() {
   init_rand();
 
-  img_t *img = img_new(50, 50, (col_t) { .r = 0, .g = 0, .b = 0 });
+  img_t *img = img_new(500, 500, (col_t) { .r = 0, .g = 0, .b = 0 });
 
   wave_color(img);
 
