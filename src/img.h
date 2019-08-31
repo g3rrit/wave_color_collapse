@@ -27,6 +27,8 @@ typedef struct img_info_t {
 
 void img_map(img_t *this, void (*fn)(img_info_t *info));
 
+img_t *img_load(char *path);
+
 int img_save(img_t *this, uint dpi, char *path);
 
 #endif

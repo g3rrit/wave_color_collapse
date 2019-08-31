@@ -12,7 +12,7 @@ void wave_color(img_t *img) {
   uint w = img->width;
   uint h = img->height;
 
-  pos_t pos_arr[w * h];
+  pos_t *pos_arr = salloc(sizeof(pos_t) * w * h, "unable to alloc pos array");
   for(uint x = 0; x < w; x++) {
     for(uint y = 0; y < h; y++) {
       pos_t *p = &pos_arr[y * w + x];
@@ -41,6 +41,7 @@ void wave_color(img_t *img) {
   }
   printf("\n");
 
+  free(pos_arr);
 }
 
 double wave_color_prob(img_t *img, uint x, uint y, col_t col) {
@@ -126,11 +127,11 @@ col_t wave_color_pos(img_t *img, uint x, uint y) {
   */
 
 
-  uint ix = 10;
-  uint iy = 10;
+  uint ix = 1;
+  uint iy = 1;
 
   if(x <= ix || y <= iy || x >= img->width - ix|| y >= img->height - iy) {
-    return col_rand();
+    return img_at(img, x, y);
   }
 
   col_t ca[4 * ix * iy];
@@ -146,7 +147,7 @@ col_t wave_color_pos(img_t *img, uint x, uint y) {
     d = rri(0, 4 * ix * iy);
     nc++;
   } while(ca[d].r == 0 && ca[d].g == 0 && ca[d].b == 0 && nc <= 4 * ix * iy);
-  if(nc >= 4 * ix * iy) return col_rand();
+  if(nc >= 4 * ix * iy) return img_at(img, x, y);
 
   return ca[d];
 }

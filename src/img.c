@@ -52,6 +52,59 @@ void img_map(img_t *this, void (*fn)(img_info_t *info)) {
   }
 }
 
+typedef struct bfh_t {
+  unsigned char bitmap_type[2];
+  int file_size;
+  short r_1;
+  short r_2;
+  unsigned int offset_bits;
+} bfh_t;
+
+typedef struct bih_t {
+  unsigned int size_header;
+  unsigned int width;
+  unsigned int height;
+  short int planes;
+  short int bit_count;
+  unsigned int compression;
+  unsigned int image_size;
+  unsigned int ppm_x;
+  unsigned int ppm_y;
+  unsigned int clr_used;
+  unsigned int clr_important;
+} bih_t;
+
+img_t *img_load(char *path) {
+  FILE *file = fopen(path, "rb");
+
+  if(!file) {
+    printf("error opening file: %s\n", path);
+    return 0;
+  }
+
+  bfh_t bfh;
+  bih_t bih;
+
+  fread(&bfh, 1, 14, file);
+  fread(&bih, 1, sizeof(bih), file);
+
+  img_t *res = img_new(bih.width, bih.height, (col_t) { .r = 0, .g = 0, .b = 0 });
+
+  uint image_size = res->width * res->height;
+  for(int i = 0; i < image_size; i++)
+  {
+    unsigned char color[3];
+
+    fread(color, 1, sizeof(color), file);
+
+    res->col_buf[i].b = color[0];
+    res->col_buf[i].g = color[1];
+    res->col_buf[i].r = color[2];
+  }
+
+  return res;
+}
+
 int img_save(img_t *this, uint dpi, char *path) {
   if(!this) return 0;
 
@@ -64,27 +117,8 @@ int img_save(img_t *this, uint dpi, char *path) {
   int file_size = 54 + 4 * image_size;
   int ppm = dpi * 39.375;
 
-  struct {
-    unsigned char bitmap_type[2];
-    int file_size;
-    short r_1;
-    short r_2;
-    unsigned int offset_bits;
-  } bfh;
-
-  struct {
-    unsigned int size_header;
-    unsigned int width;
-    unsigned int height;
-    short int planes;
-    short int bit_count;
-    unsigned int compression;
-    unsigned int image_size;
-    unsigned int ppm_x;
-    unsigned int ppm_y;
-    unsigned int clr_used;
-    unsigned int clr_important;
-  } bih;
+  bfh_t bfh;
+  bih_t bih;
 
   memcpy(&bfh.bitmap_type, "BM", 2);
   bfh.file_size = file_size;
